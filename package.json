@@ -1,0 +1,28 @@
+{
+  "name": "portal-imobiliario-premium",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Portal imobiliário premium transfronteiriço - Portugal e Angola",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean",
+    "api:dev": "pnpm --filter @portal/api dev",
+    "web:dev": "pnpm --filter @portal/web dev",
+    "db:generate": "pnpm --filter @portal/database db:generate",
+    "db:migrate": "pnpm --filter @portal/database db:migrate",
+    "db:seed": "pnpm --filter @portal/database db:seed",
+    "db:studio": "pnpm --filter @portal/database db:studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

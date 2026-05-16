@@ -1,0 +1,10 @@
+# Railway deployment config
+# Este ficheiro é usado como referência — a config real é feita no dashboard
+# ou via Railway CLI (railway login && railway up)
+
+[build]
+builder = "DOCKERFILE"
+
+[deploy]
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

@@ -1,0 +1,464 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  name          String
+  role          String    @default("buyer")
+  country       String    @default("PT")
+  agency        String?
+  licenseId     String?   @map("license_id")
+  avatarUrl     String?   @map("avatar_url")
+  isActive         Boolean   @default(true) @map("is_active")
+  kycStatus        String    @default("pending") @map("kyc_status")
+  kycRisk          String    @default("low") @map("kyc_risk")
+  listingCount     Int       @default(0) @map("listing_count")
+  freeListingsUsed Int       @default(0) @map("free_listings_used")
+  planType         String    @default("free") @map("plan_type")
+  planExpiresAt    DateTime? @map("plan_expires_at")
+  featuredCredits  Int       @default(0) @map("featured_credits")
+  stripeCustomerId String?   @map("stripe_customer_id")
+  stripeSubscriptionId String? @map("stripe_subscription_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  properties       Property[]
+  ownerProperties  Property[] @relation("OwnerProperties")
+  leads            Lead[]
+  documents        Document[]
+  activityLogs     ActivityLog[]
+  teams            TeamMember[]
+  ownedTeams       Team[]       @relation("TeamBroker")
+  apiKeys          ApiKey[]
+  payments         Payment[]
+  favorites        Favorite[]
+  agentReviews     AgentReview[] @relation("ReviewAuthor")
+  alerts           Alert[]
+
+  @@map("users")
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  name        String
+  key         String   @unique
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastUsedAt  DateTime? @map("last_used_at")
+  expiresAt   DateTime? @map("expires_at")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("api_keys")
+  @@index([userId])
+  @@index([key])
+}
+
+model Property {
+  id              String      @id @default(cuid())
+  title           String
+  description     String
+  price           BigInt
+  currency        String
+  address         String
+  city            String
+  country         String
+  neighborhood    String
+  latitude        Float
+  longitude       Float
+  typology        String
+  bedrooms        Int
+  bathrooms       Int
+  sqm             Int
+  parking         Int         @default(0)
+  pool            Boolean     @default(false)
+  garden          Boolean     @default(false)
+  energyCertificate String?   @map("energy_certificate")
+  walkScore       Int?        @map("walk_score")
+  status          String      @default("available")
+  listingType     String      @default("sale") @map("listing_type")
+  
+  // Features
+  elevator        Boolean     @default(false)
+  balcony         Boolean     @default(false)
+  terrace         Boolean     @default(false)
+  airConditioning Boolean     @default(false) @map("air_conditioning")
+  storageRoom     Boolean     @default(false) @map("storage_room")
+  condition       String?     // nova, bom-estado, para-recuperar
+  floor           String?     // rc, intermedio, ultimo
+  constructionYear Int?       @map("construction_year")
+  
+  // Address details
+  hideAddress     Boolean     @default(false) @map("hide_address")
+  door            String?
+  block           String?
+  urbanization    String?
+  
+  // Property classification
+  propertyType    String?     @map("property_type") // apartamento, penthouse, duplex, moradia-independente, moradia-geminada, moradia-banda, casa-rustica, villa, quinta, moradia-terrea, solar, loft, agua-furtada
+  situation       String?     // disponivel, arrendado
+  
+  // Multimedia
+  hasFloorPlan    Boolean     @default(false) @map("has_floor_plan")
+  hasVirtualTour  Boolean     @default(false) @map("has_virtual_tour")
+  virtualTourUrl  String?     @map("virtual_tour_url")
+  
+  tags            String?
+  images          String?
+  featured        Boolean     @default(false)
+  featuredUntil   DateTime?   @map("featured_until")
+  viewCount       Int         @default(0) @map("view_count")
+  contactCount    Int         @default(0) @map("contact_count")
+  
+  featuredLevel   String?     @map("featured_level")
+  ownerId         String?     @map("owner_id")
+  owner           User?       @relation("OwnerProperties", fields: [ownerId], references: [id])
+
+  agentId         String?     @map("agent_id")
+  agent           User?       @relation(fields: [agentId], references: [id])
+
+  teamId          String?     @map("team_id")
+  team            Team?       @relation(fields: [teamId], references: [id])
+
+  // Import fields
+  externalId      String?     @map("external_id")
+  source          String?     @map("source") // csv, openimmo, url, json, ximo
+
+  leads           Lead[]
+  documents       Document[]
+  valuations      Valuation[]
+  simulations     Simulation[]
+  favorites       Favorite[]
+  priceHistory    PriceHistory[]
+
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  @@map("properties")
+  @@index([country])
+  @@index([city])
+  @@index([status])
+  @@index([listingType])
+  @@index([price])
+  @@index([agentId])
+  @@index([ownerId])
+  @@index([teamId])
+  @@index([externalId])
+}
+
+model Lead {
+  id          String      @id @default(cuid())
+  name        String
+  email       String
+  phone       String?
+  score       Int         @default(50)
+  status      String      @default("warm")
+  source      String      @default("organic")
+  notes       String?
+  
+  propertyId  String      @map("property_id")
+  property    Property    @relation(fields: [propertyId], references: [id])
+  
+  agentId     String?     @map("agent_id")
+  agent       User?       @relation(fields: [agentId], references: [id])
+
+  teamId      String?     @map("team_id")
+  team        Team?       @relation(fields: [teamId], references: [id])
+
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@map("leads")
+  @@index([propertyId])
+  @@index([agentId])
+  @@index([status])
+  @@index([email])
+  @@index([teamId])
+}
+
+model Document {
+  id          String          @id @default(cuid())
+  name        String
+  type        String
+  url         String
+  size        BigInt?
+  status      String          @default("pending")
+  
+  propertyId  String?         @map("property_id")
+  property    Property?       @relation(fields: [propertyId], references: [id])
+  
+  ownerId     String?         @map("owner_id")
+  owner       User?           @relation(fields: [ownerId], references: [id])
+  
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  @@map("documents")
+}
+
+model Valuation {
+  id            String    @id @default(cuid())
+  estimatedValue BigInt   @map("estimated_value")
+  confidence    Int
+  currency      String
+  factors       String?
+  
+  propertyId    String    @map("property_id")
+  property      Property  @relation(fields: [propertyId], references: [id])
+  
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@map("valuations")
+}
+
+model Simulation {
+  id            String   @id @default(cuid())
+  type          String
+  inputData     String   @map("input_data")
+  resultData    String   @map("result_data")
+  propertyId    String?  @map("property_id")
+  property      Property? @relation(fields: [propertyId], references: [id])
+  email         String?
+  phone         String?
+  name          String?
+  converted     Boolean  @default(false)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("simulations")
+  @@index([type])
+  @@index([createdAt])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  action    String
+  target    String?
+  details   String?
+  ipAddress String?  @map("ip_address")
+  
+  userId    String?  @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id])
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("activity_logs")
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Webhook {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  events    String   // Comma-separated: property.sold,lead.created,etc
+  isActive  Boolean  @default(true) @map("is_active")
+  secret    String?  // For HMAC signature
+  lastCalled DateTime? @map("last_called")
+  lastStatus String?  @map("last_status")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("webhooks")
+}
+
+model Workflow {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  trigger     String   // e.g. "property.sold", "lead.qualified"
+  actions     String   // JSON array of actions
+  isActive    Boolean  @default(true) @map("is_active")
+  runCount    Int      @default(0) @map("run_count")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("workflows")
+}
+
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  logoUrl     String?  @map("logo_url")
+  country     String   @default("PT")
+  brokerId    String   @map("broker_id")
+  broker      User     @relation("TeamBroker", fields: [brokerId], references: [id])
+  members     TeamMember[]
+  properties  Property[]
+  leads       Lead[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id             String   @id @default(cuid())
+  teamId         String   @map("team_id")
+  team           Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId         String   @map("user_id")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String   @default("agent")
+  commissionRate Float    @default(50.0) @map("commission_rate")
+  joinedAt       DateTime @default(now()) @map("joined_at")
+
+  @@unique([teamId, userId])
+  @@map("team_members")
+}
+
+model FeaturedPackage {
+  id           String   @id @default(cuid())
+  name         String
+  description  String
+  price        BigInt
+  durationDays Int
+  features     String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@map("featured_packages")
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  stripePaymentIntentId String? @map("stripe_payment_intent_id")
+  stripeCheckoutSessionId String? @map("stripe_checkout_session_id")
+  type          String   // plan, credits, featured_package
+  status        String   @default("pending") // pending, completed, failed
+  amount        Int      // em cêntimos
+  currency      String   @default("EUR")
+  description   String?
+  metadata      String?  // JSON
+  userId        String   @map("user_id")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("payments")
+  @@index([userId])
+  @@index([status])
+  @@index([stripePaymentIntentId])
+}
+
+// ─── NOVOS MODELOS ───
+
+model Favorite {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId String   @map("property_id")
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, propertyId])
+  @@map("favorites")
+  @@index([userId])
+  @@index([propertyId])
+}
+
+model AgentReview {
+  id        String   @id @default(cuid())
+  rating    Int      // 1-5
+  title     String?
+  comment   String?
+  verified  Boolean  @default(false) // verified purchase/visit
+  
+  agentId   String   @map("agent_id")
+  authorId  String   @map("author_id")
+  author    User     @relation("ReviewAuthor", fields: [authorId], references: [id])
+  
+  propertyId String? @map("property_id")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("agent_reviews")
+  @@index([agentId])
+  @@index([authorId])
+}
+
+model PriceHistory {
+  id        String   @id @default(cuid())
+  oldPrice  BigInt   @map("old_price")
+  newPrice  BigInt   @map("new_price")
+  reason    String?  // e.g. "market_adjustment", "owner_request"
+  
+  propertyId String  @map("property_id")
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("price_history")
+  @@index([propertyId])
+  @@index([createdAt])
+}
+
+model Alert {
+  id          String   @id @default(cuid())
+  name        String?
+  email       String
+  country     String
+  city        String?
+  neighborhood String?
+  typology    String?
+  listingType String?  @map("listing_type") // sale, rent
+  minPrice    Int?     @map("min_price")
+  maxPrice    Int?     @map("max_price")
+  minSqm      Int?     @map("min_sqm")
+  maxSqm      Int?     @map("max_sqm")
+  bedrooms    Int?
+  hasPool     Boolean? @map("has_pool")
+  hasGarden   Boolean? @map("has_garden")
+  frequency   String   @default("daily") // instant, daily, weekly
+  isActive    Boolean  @default(true) @map("is_active")
+  lastSentAt  DateTime? @map("last_sent_at")
+  
+  userId      String?  @map("user_id")
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("alerts")
+  @@index([userId])
+  @@index([email])
+  @@index([isActive])
+}
+
+model AggregatedListing {
+  id          String   @id @default(cuid())
+  title       String
+  price       BigInt
+  currency    String
+  city        String
+  country     String
+  neighborhood String?
+  typology    String?
+  sqm         Int?
+  bedrooms    Int?
+  bathrooms   Int?
+  imageUrl    String?  @map("image_url")
+  sourceUrl   String   @map("source_url")
+  sourcePortal String  @map("source_portal") // idealista, imovirtual, casasapo, supercasa, olx
+  externalId  String?  @map("external_id")
+  
+  listedAt    DateTime @default(now()) @map("listed_at")
+  scrapedAt   DateTime @default(now()) @map("scraped_at")
+
+  @@map("aggregated_listings")
+  @@index([country])
+  @@index([city])
+  @@index([sourcePortal])
+  @@index([externalId])
+}

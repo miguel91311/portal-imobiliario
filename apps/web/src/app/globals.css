@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-surface: 250 250 248;
+    --color-foreground: 31 37 30;
+    --color-muted: 107 123 131;
+    --color-border: 232 232 224;
+    --color-accent: 204 119 34;
+    --color-olive: 61 74 58;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-cream-100 text-foreground font-sans;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  /* Quiet Luxury: tipografia editorial */
+  h1, h2, h3 {
+    @apply font-serif tracking-tight;
+  }
+
+  /* Custom scrollbar minimalista */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #C5CBC4;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #9DA89C;
+  }
+}
+
+@layer components {
+  .luxury-container {
+    @apply max-w-[1440px] mx-auto px-6 lg:px-10;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 bg-accent text-white font-medium text-sm tracking-wide rounded-lg transition-all duration-300 ease-luxury hover:bg-accent-dark hover:shadow-elevated active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center px-6 py-3 bg-transparent text-olive-500 font-medium text-sm tracking-wide rounded-lg border border-olive-200 transition-all duration-300 ease-luxury hover:bg-olive-50 hover:border-olive-300;
+  }
+
+  .card-luxury {
+    @apply bg-surface-elevated rounded-2xl border border-border shadow-card transition-all duration-500 ease-luxury hover:shadow-elevated hover:-translate-y-1;
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #3D4A3A 0%, #6B7B83 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+@layer utilities {
+  .mapboxgl-map {
+    font-family: inherit;
+  }
+
+  .mapboxgl-popup-content {
+    @apply rounded-xl shadow-elevated p-0 overflow-hidden;
+    font-family: inherit;
+  }
+
+  .mapboxgl-popup-tip {
+    display: none;
+  }
+}
